@@ -1,0 +1,11 @@
+{
+  "name": "gas-attendance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Googleフォームで打刻し、スプレッドシートで自動集計する複数店舗向け勤怠管理（Google Apps Script）",
+  "scripts": {
+    "test": "node --test test/",
+    "push": "clasp push"
+  },
+  "license": "MIT"
+}
