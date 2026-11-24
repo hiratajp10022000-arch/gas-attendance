@@ -128,6 +128,11 @@ function refresh() {
   writeMonthly_(ss, shifts, data.master, ym);
 }
 
+/** 「=」や「+」で始まる文が、計算式として動かないようにする（@ 書式では止まらない。-5 などの数はそのまま） */
+function text_(v) {
+  return typeof v === 'string' && /^[=+@-]/.test(v) && isNaN(v) ? "'" + v : v;
+}
+
 function setWidths_(sh, widths) { widths.forEach(function (w, i) { sh.setColumnWidth(i + 1, w); }); }
 
 function hm_(d) { return d ? Utilities.formatDate(d, Session.getScriptTimeZone(), 'HH:mm') : ''; }
@@ -145,7 +150,7 @@ function writeDaily_(ss, shifts, ym) {
   sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold').setBackground('#e8f0fe');
   if (rows.length) {
     // 「142:30」などがスプレッドシートに時刻（24時間で折り返し）と解釈されないよう、書式を文字列にしてから書き込む
-    sh.getRange(2, 1, rows.length, header.length).setNumberFormat('@').setValues(rows);
+    sh.getRange(2, 1, rows.length, header.length).setNumberFormat('@').setValues(rows.map(function (r) { return r.map(text_); }));
     rows.forEach(function (r, i) {
       if (r[9]) sh.getRange(i + 2, 1, 1, header.length).setBackground('#fde8e8');
       else if (r[3]) sh.getRange(i + 2, 1, 1, header.length).setBackground('#fff7e0');
@@ -167,7 +172,7 @@ function writeMonthly_(ss, shifts, master, ym) {
   var body = rows.map(function (r) {
     return [r.store, r.staff, r.employment, r.days, formatHM(r.workMin), formatHM(r.breakMin), formatHM(r.overtimeMin), r.helpDays, r.issueCount || ''];
   });
-  if (body.length) sh.getRange(5, 1, body.length, header.length).setNumberFormat('@').setValues(body);
+  if (body.length) sh.getRange(5, 1, body.length, header.length).setNumberFormat('@').setValues(body.map(function (r) { return r.map(text_); }));
   body.forEach(function (r, i) { if (r[8]) sh.getRange(5 + i, 9).setBackground('#fde8e8'); });
 
   var top = 5 + body.length + 2;
@@ -175,7 +180,7 @@ function writeMonthly_(ss, shifts, master, ym) {
   sh.getRange(top, 1).setValue('店舗別 合計').setFontWeight('bold');
   var sh2 = [['店舗', '人数', '延べ出勤日数', '実働合計', '残業合計', '要確認']];
   stores.forEach(function (s) { sh2.push([s.store, s.staffCount, s.days, formatHM(s.workMin), formatHM(s.overtimeMin), s.issueCount || '']); });
-  sh.getRange(top + 1, 1, sh2.length, 6).setNumberFormat('@').setValues(sh2);
+  sh.getRange(top + 1, 1, sh2.length, 6).setNumberFormat('@').setValues(sh2.map(function (r) { return r.map(text_); }));
   sh.getRange(top + 1, 1, 1, 6).setFontWeight('bold').setBackground('#e8f0fe');
   // 自動調整は日本語の列で狭くなることがあるため、列幅は固定で指定する
   setWidths_(sh, sh.getName() === CONFIG.SHEET.MONTHLY ? [80, 100, 85, 75, 80, 75, 75, 75, 60] : [60, 45, 80, 60, 75, 60, 60, 60, 260]);
@@ -227,7 +232,7 @@ function buildBook_(ss, name, data) {
     });
   }
   rows.push(['合計', '', '', '', '', formatHM(tot.brk), formatHM(tot.work), formatHM(tot.ot), '出勤 ' + tot.days + '日']);
-  sh.getRange(4, 1, rows.length, header.length).setNumberFormat('@').setValues(rows);
+  sh.getRange(4, 1, rows.length, header.length).setNumberFormat('@').setValues(rows.map(function (r) { return r.map(text_); }));
   sh.getRange(4 + rows.length - 1, 1, 1, header.length).setFontWeight('bold').setBackground('#f1f3f4');
   // 自動調整は日本語の列で狭くなることがあるため、列幅は固定で指定する
   setWidths_(sh, sh.getName() === CONFIG.SHEET.MONTHLY ? [80, 100, 85, 75, 80, 75, 75, 75, 60] : [60, 45, 80, 60, 75, 60, 60, 60, 260]);
